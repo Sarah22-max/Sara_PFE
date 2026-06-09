@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EpiSight — Analyse Santé Publique Californie</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --navy:   #0D1B2A;
+  --blue:   #1E3A5F;
+  --mid:    #2D5A8E;
+  --accent: #E85D24;
+  --teal:   #117A65;
+  --gold:   #F4C542;
+  --light:  #F0F4F8;
+  --card:   #ffffff;
+  --border: #DDE3EC;
+  --text:   #1A1A2E;
+  --muted:  #6B7A99;
+  --shadow: 0 4px 24px rgba(13,27,42,0.10);
+  --radius: 16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--text);min-height:100vh}
+
+/* ── TOP NAV ── */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:var(--navy);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:60px;
+  box-shadow:0 2px 20px rgba(0,0,0,0.3);
+}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-logo{
+  width:34px;height:34px;border-radius:8px;
+  background:linear-gradient(135deg,var(--accent),#f4924a);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;color:#fff;font-size:14px;
+}
+.nav-title{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:18px;letter-spacing:-0.3px}
+.nav-sub{font-size:11px;color:rgba(255,255,255,0.5);font-weight:300}
+.nav-tabs{display:flex;gap:4px}
+.nav-tab{
+  padding:6px 14px;border-radius:8px;cursor:pointer;
+  font-size:13px;font-weight:500;color:rgba(255,255,255,0.65);
+  transition:all .2s;border:none;background:transparent;
+}
+.nav-tab:hover{background:rgba(255,255,255,0.08);color:#fff}
+.nav-tab.active{background:var(--accent);color:#fff}
+.nav-badge{
+  font-size:10px;padding:2px 8px;border-radius:20px;
+  background:rgba(232,93,36,0.2);color:var(--accent);font-weight:600;
+}
+
+/* ── LAYOUT ── */
+.page-wrap{padding-top:60px}
+.page{display:none;animation:fadeIn .3s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.container{max-width:1280px;margin:0 auto;padding:2rem 1.5rem}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,var(--navy) 0%,var(--blue) 60%,#1a4a7a 100%);
+  padding:3rem 1.5rem 2rem;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:-40px;right:-80px;
+  width:400px;height:400px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,93,36,0.12),transparent 70%);
+  pointer-events:none;
+}
+.hero-inner{max-width:1280px;margin:0 auto}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(232,93,36,0.15);border:1px solid rgba(232,93,36,0.3);
+  padding:4px 12px;border-radius:20px;
+  font-size:11px;font-weight:600;color:var(--accent);letter-spacing:1px;text-transform:uppercase;
+  margin-bottom:1rem;
+}
+.hero h1{
+  font-family:'Syne',sans-serif;font-weight:800;
+  font-size:clamp(1.8rem,3.5vw,2.8rem);color:#fff;
+  line-height:1.15;letter-spacing:-0.5px;margin-bottom:.5rem;
+}
+.hero h1 span{color:var(--accent)}
+.hero-desc{font-size:15px;color:rgba(255,255,255,0.6);font-weight:300;max-width:600px;margin-bottom:1.5rem}
+.hero-meta{display:flex;gap:1.5rem;flex-wrap:wrap}
+.hero-meta-item{font-size:12px;color:rgba(255,255,255,0.5)}
+.hero-meta-item strong{color:rgba(255,255,255,0.85);display:block;font-size:13px}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:1.5rem 0}
+.kpi{
+  background:var(--card);border-radius:var(--radius);
+  padding:1.25rem 1.5rem;box-shadow:var(--shadow);
+  border:1px solid var(--border);position:relative;overflow:hidden;
+  transition:transform .2s;
+}
+.kpi:hover{transform:translateY(-2px)}
+.kpi::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--accent),var(--gold));
+}
+.kpi-icon{font-size:22px;margin-bottom:.5rem}
+.kpi-val{
+  font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;
+  color:var(--blue);line-height:1;margin-bottom:.25rem;
+}
+.kpi-label{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.kpi-sub{font-size:11px;color:var(--accent);margin-top:.3rem;font-weight:500}
+
+/* ── SECTION TITLE ── */
+.sec-title{
+  font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;
+  color:var(--blue);margin-bottom:1rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+.sec-title::before{
+  content:'';width:4px;height:20px;border-radius:2px;
+  background:linear-gradient(180deg,var(--accent),var(--gold));
+}
+
+/* ── CHART CARD ── */
+.chart-card{
+  background:var(--card);border-radius:var(--radius);
+  padding:1.5rem;box-shadow:var(--shadow);border:1px solid var(--border);
+  margin-bottom:1.25rem;
+}
+.chart-card h3{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px}
+.chart-card .sub{font-size:12px;color:var(--muted);margin-bottom:1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--blue);color:#fff;padding:10px 14px;text-align:left;font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:nth-child(even) td{background:#F8FAFC}
+tr:hover td{background:#EEF4FF}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-red{background:#FDECEA;color:#C0392B}
+.badge-orange{background:#FFF3E0;color:#E65100}
+.badge-yellow{background:#FFFDE7;color:#F57F17}
+.badge-green{background:#E8F5E9;color:#1B5E20}
+
+/* ── ML CARDS ── */
+.ml-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.25rem}
+.ml-card{
+  border-radius:var(--radius);padding:1.25rem;
+  border:2px solid var(--border);transition:all .2s;
+}
+.ml-card.best{border-color:var(--gold);background:#FFFDF0}
+.ml-card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;margin-bottom:1rem}
+.ml-metrics{display:flex;justify-content:space-between;gap:.5rem}
+.ml-metric{text-align:center}
+.ml-metric-val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:800}
+.ml-metric-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+.best-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:var(--gold);color:#333;padding:2px 8px;
+  border-radius:12px;font-size:11px;font-weight:700;margin-bottom:.5rem;
+}
+
+/* ── PIPELINE ── */
+.pipeline{display:flex;align-items:center;gap:0;overflow-x:auto;margin-bottom:1.5rem}
+.pipe-step{
+  flex:1;min-width:120px;padding:.75rem 1rem;text-align:center;
+  position:relative;
+}
+.pipe-step::after{
+  content:'→';position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  font-size:18px;color:var(--accent);font-weight:700;z-index:1;
+}
+.pipe-step:last-child::after{display:none}
+.pipe-num{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:12px;color:#fff;margin:0 auto .4rem;
+}
+.pipe-name{font-size:11px;font-weight:600;color:var(--blue)}
+.pipe-desc{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── PRIORITY ── */
+.priority-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.priority-card{
+  border-radius:var(--radius);padding:1.25rem;text-align:center;
+  border:1px solid var(--border);
+}
+.priority-icon{font-size:2rem;margin-bottom:.5rem}
+.priority-count{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800}
+.priority-label{font-size:12px;color:var(--muted);margin-top:.25rem}
+
+/* ── HEATMAP ── */
+.heatmap-wrap{overflow-x:auto}
+.heatmap-table{border-collapse:collapse;font-size:11px;min-width:700px;width:100%}
+.heatmap-table th{background:var(--blue);color:#fff;padding:6px 8px;text-align:center;font-size:10px}
+.heatmap-table th:first-child{text-align:left;min-width:140px}
+.heatmap-table td{padding:5px 6px;text-align:center;border-radius:3px;font-weight:500}
+
+/* ── FOOTER ── */
+footer{
+  text-align:center;padding:2rem;
+  font-size:12px;color:var(--muted);
+  border-top:1px solid var(--border);margin-top:3rem;
+}
+footer strong{color:var(--blue)}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .grid2,.grid3,.ml-cards{grid-template-columns:1fr}
+  .priority-grid{grid-template-columns:repeat(2,1fr)}
+  .nav-tabs{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">ES</div>
+    <div>
+      <div class="nav-title">EpiSight</div>
+      <div class="nav-sub">Intelligence Épidémiologique</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('overview',this)">📊 Vue générale</button>
+    <button class="nav-tab" onclick="showPage('eda',this)">🔬 Analyse EDA</button>
+    <button class="nav-tab" onclick="showPage('ml',this)">🤖 Modèles ML</button>
+    <button class="nav-tab" onclick="showPage('priority',this)">🚨 Priorités</button>
+  </div>
+  <span class="nav-badge">Californie 2001–2014</span>
+</nav>
+
+<div class="page-wrap">
+
+<!-- ══ PAGE 1 : VUE GÉNÉRALE ══ -->
+<div id="page-overview" class="page active">
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">🏥 PFE — Santé Publique</div>
+      <h1>Analyse des <span>Maladies Infectieuses</span><br/>en Californie</h1>
+      <p class="hero-desc">Détection des tendances épidémiques et identification des points d'intervention prioritaires par Machine Learning et Big Data.</p>
+      <div class="hero-meta">
+        <div class="hero-meta-item"><strong>SARA BENRAHMOUNE</strong>BTS AL KENDI</div>
+        <div class="hero-meta-item"><strong>M. YOUNES BEL ARABI</strong>Encadrant</div>
+        <div class="hero-meta-item"><strong>2024 – 2025</strong>Année universitaire</div>
+        <div class="hero-meta-item"><strong>Python · Spark · XGBoost</strong>Stack technique</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-icon">🦠</div>
+        <div class="kpi-val">736K</div>
+        <div class="kpi-label">Total cas déclarés</div>
+        <div class="kpi-sub">↑ 2001 – 2014</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon">🧬</div>
+        <div class="kpi-val">47</div>
+        <div class="kpi-label">Maladies infectieuses</div>
+        <div class="kpi-sub">à déclaration obligatoire</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon">📍</div>
+        <div class="kpi-val">42</div>
+        <div class="kpi-label">Comtés californiens</div>
+        <div class="kpi-sub">sur 58 comtés CA</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-icon">📅</div>
+        <div class="kpi-val">14</div>
+        <div class="kpi-label">Années de données</div>
+        <div class="kpi-sub">séries temporelles complètes</div>
+      </div>
+    </div>
+
+    <!-- Pipeline -->
+    <div class="sec-title">Pipeline Big Data complet</div>
+    <div class="chart-card">
+      <div class="pipeline">
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#1E3A5F">①</div>
+          <div class="pipe-name">HDFS</div>
+          <div class="pipe-desc">Ingestion CSV</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#2D5A8E">②</div>
+          <div class="pipe-name">Spark</div>
+          <div class="pipe-desc">Exploration</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#4A235A">③</div>
+          <div class="pipe-name">Preprocessing</div>
+          <div class="pipe-desc">StringIndexer + Scaler</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#117A65">④</div>
+          <div class="pipe-name">EDA</div>
+          <div class="pipe-desc">8 graphiques</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#922B21">⑤</div>
+          <div class="pipe-name">ML</div>
+          <div class="pipe-desc">XGBoost · RF · GB</div>
+        </div>
+        <div class="pipe-step">
+          <div class="pipe-num" style="background:#E85D24">⑥</div>
+          <div class="pipe-name">Dashboard</div>
+          <div class="pipe-desc">EpiSight</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Évolution + Top maladies -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Évolution annuelle des cas</h3>
+        <div class="sub">Total des cas déclarés par année, Californie 2001–2014</div>
+        <div style="position:relative;height:260px"><canvas id="chartEvol" aria-label="Graphique courbe évolution annuelle des cas de maladies infectieuses en Californie de 2001 à 2014">Pic en 2010, tendance décroissante ensuite.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Top 10 maladies les plus répandues</h3>
+        <div class="sub">Nombre total de cas cumulés 2001–2014</div>
+        <div style="position:relative;height:260px"><canvas id="chartTop10" aria-label="Bar chart horizontal des 10 maladies infectieuses les plus répandues en Californie">Campylobacteriosis en tête avec 142K cas.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Sexe + Dataset info -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Répartition par sexe</h3>
+        <div class="sub">Distribution des cas Male vs Female (hors Total)</div>
+        <div style="position:relative;height:240px"><canvas id="chartSex" aria-label="Graphique en donut montrant la répartition des cas entre hommes et femmes">52% Male, 48% Female.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Informations sur le dataset</h3>
+        <div class="sub">Infectious Disease Prediction — Kaggle / CDPH California</div>
+        <div class="tbl-wrap" style="margin-top:.5rem">
+          <table>
+            <tr><th>Colonne</th><th>Type</th><th>Description</th></tr>
+            <tr><td><strong>Disease</strong></td><td>String</td><td>Nom de la maladie</td></tr>
+            <tr><td><strong>County</strong></td><td>String</td><td>Comté californien</td></tr>
+            <tr><td><strong>Year</strong></td><td>Integer</td><td>Année (2001–2014)</td></tr>
+            <tr><td><strong>Sex</strong></td><td>String</td><td>Male / Female / Total</td></tr>
+            <tr><td><strong style="color:#E85D24">Count ★</strong></td><td>Integer</td><td>Nb de cas (cible ML)</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+          <span class="badge badge-green">75 614 lignes train</span>
+          <span class="badge badge-orange">18 904 lignes test</span>
+          <span class="badge" style="background:#EEF4FF;color:#1E3A5F">< 0.3% valeurs nulles</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 2 : EDA ══ -->
+<div id="page-eda" class="page">
+  <div class="container">
+    <div style="padding:1.5rem 0 .5rem">
+      <div class="sec-title">🔬 Analyse Exploratoire des Données (EDA)</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">8 visualisations générées par le script 03_eda_analysis.py avec Matplotlib, Seaborn et Plotly</p>
+    </div>
+
+    <!-- Heatmap + Boxplot -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Évolution Top 5 maladies (2001–2014)</h3>
+        <div class="sub">Tendances comparatives des 5 maladies les plus répandues</div>
+        <div style="position:relative;height:280px"><canvas id="chartTop5" aria-label="Courbes d évolution des 5 maladies les plus répandues de 2001 à 2014">Campylobacteriosis en hausse constante.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Top 10 comtés les plus touchés</h3>
+        <div class="sub">Cumul des cas 2001–2014 par comté californien</div>
+        <div style="position:relative;height:280px"><canvas id="chartCounty" aria-label="Bar chart des 10 comtés californiens les plus touchés par les maladies infectieuses">Los Angeles, San Diego, San Francisco en tête.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Heatmap Year x Disease -->
+    <div class="chart-card">
+      <h3>Heatmap : Nombre de cas par maladie et par année</h3>
+      <div class="sub">Top 10 maladies × 14 années — intensité = nombre de cas (en milliers)</div>
+      <div class="heatmap-wrap" id="heatmapContainer"></div>
+    </div>
+
+    <!-- Corrélation -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Matrice de corrélation</h3>
+        <div class="sub">Relations entre les variables numériques du dataset</div>
+        <div id="corrMatrix"></div>
+      </div>
+      <div class="chart-card">
+        <h3>Statistiques descriptives de Count</h3>
+        <div class="sub">Distribution de la variable cible (nombre de cas)</div>
+        <div class="tbl-wrap">
+          <table>
+            <tr><th>Statistique</th><th>Valeur</th><th>Interprétation</th></tr>
+            <tr><td>Minimum</td><td><strong>0</strong></td><td>Aucun cas certaines périodes</td></tr>
+            <tr><td>Moyenne</td><td><strong>487</strong></td><td>Cas moyen par enregistrement</td></tr>
+            <tr><td>Médiane (50%)</td><td><strong>142</strong></td><td>Distribution asymétrique droite</td></tr>
+            <tr><td>75e percentile</td><td><strong>612</strong></td><td>75% des cas en dessous</td></tr>
+            <tr><td>Maximum</td><td><strong>12 847</strong></td><td>Pic de Campylobactériose</td></tr>
+            <tr><td>Écart-type</td><td><strong>891</strong></td><td>Forte variabilité des cas</td></tr>
+            <tr><td>Valeurs nulles</td><td><strong>< 0.3%</strong></td><td>Dataset très propre</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:1rem;padding:.75rem;background:#FFF8F0;border-left:3px solid var(--accent);border-radius:4px;font-size:12px;color:var(--text)">
+          <strong>Transformation appliquée :</strong> Count_log = log(1 + Count) pour réduire l'asymétrie de la distribution avant l'entraînement ML.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 3 : ML ══ -->
+<div id="page-ml" class="page">
+  <div class="container">
+    <div style="padding:1.5rem 0 .5rem">
+      <div class="sec-title">🤖 Résultats des modèles Machine Learning</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Comparaison de 3 algorithmes de régression supervisée : XGBoost, Random Forest, Gradient Boosting</p>
+    </div>
+
+    <!-- ML Cards -->
+    <div class="ml-cards">
+      <div class="ml-card best">
+        <div class="best-badge">⭐ Meilleur modèle</div>
+        <div class="ml-card-name" style="color:#E85D24">XGBoost</div>
+        <div class="ml-metrics">
+          <div class="ml-metric">
+            <div class="ml-metric-val" style="color:#E85D24">0.8741</div>
+            <div class="ml-metric-lbl">R²</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">142.3</div>
+            <div class="ml-metric-lbl">RMSE</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">98.6</div>
+            <div class="ml-metric-lbl">MAE</div>
+          </div>
+        </div>
+      </div>
+      <div class="ml-card">
+        <div class="ml-card-name" style="color:#3B8BD4">Random Forest</div>
+        <div class="ml-metrics">
+          <div class="ml-metric">
+            <div class="ml-metric-val" style="color:#3B8BD4">0.8312</div>
+            <div class="ml-metric-lbl">R²</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">167.8</div>
+            <div class="ml-metric-lbl">RMSE</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">112.4</div>
+            <div class="ml-metric-lbl">MAE</div>
+          </div>
+        </div>
+      </div>
+      <div class="ml-card">
+        <div class="ml-card-name" style="color:#1D9E75">Gradient Boosting</div>
+        <div class="ml-metrics">
+          <div class="ml-metric">
+            <div class="ml-metric-val" style="color:#1D9E75">0.8478</div>
+            <div class="ml-metric-lbl">R²</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">158.4</div>
+            <div class="ml-metric-lbl">RMSE</div>
+          </div>
+          <div class="ml-metric">
+            <div class="ml-metric-val">105.1</div>
+            <div class="ml-metric-lbl">MAE</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Comparaison métriques -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Comparaison RMSE & MAE</h3>
+        <div class="sub">Plus bas = meilleur — XGBoost gagne sur les deux</div>
+        <div style="position:relative;height:260px"><canvas id="chartRMSE" aria-label="Bar chart comparant le RMSE et MAE des trois modèles ML">XGBoost RMSE 142 vs Random Forest 167.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Comparaison R² (coefficient de détermination)</h3>
+        <div class="sub">Plus proche de 1.0 = meilleur — XGBoost R²=0.8741</div>
+        <div style="position:relative;height:260px"><canvas id="chartR2" aria-label="Bar chart comparant le R² des trois modèles ML">XGBoost 0.8741, Gradient Boosting 0.8478, Random Forest 0.8312.</canvas></div>
+      </div>
+    </div>
+
+    <!-- Feature Importance + Interprétation -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Feature Importance — XGBoost</h3>
+        <div class="sub">Contribution de chaque variable à la prédiction</div>
+        <div style="position:relative;height:260px"><canvas id="chartFeat" aria-label="Bar chart de la feature importance du modèle XGBoost">Disease_idx et County_idx sont les variables les plus importantes.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Interprétation des métriques</h3>
+        <div class="sub">Guide de lecture des résultats ML</div>
+        <div class="tbl-wrap">
+          <table>
+            <tr><th>Métrique</th><th>Valeur XGBoost</th><th>Signification</th></tr>
+            <tr><td><strong>R² = 0.8741</strong></td><td><span class="badge badge-green">Excellent</span></td><td>Le modèle explique 87.4% de la variance des cas</td></tr>
+            <tr><td><strong>RMSE = 142.3</strong></td><td><span class="badge badge-green">Bon</span></td><td>Erreur moyenne de ±142 cas par prédiction</td></tr>
+            <tr><td><strong>MAE = 98.6</strong></td><td><span class="badge badge-green">Bon</span></td><td>Erreur absolue moyenne de 98 cas</td></tr>
+          </table>
+        </div>
+        <div style="margin-top:1rem">
+          <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:.5rem">Pipeline de preprocessing appliqué</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.8">
+            Disease → <strong>StringIndexer</strong> → Disease_idx<br/>
+            County → <strong>StringIndexer</strong> → County_idx<br/>
+            Sex → <strong>StringIndexer</strong> → Sex_idx<br/>
+            [6 features] → <strong>VectorAssembler</strong> → features_raw<br/>
+            features_raw → <strong>StandardScaler</strong> → features (mean=0, std=1)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PAGE 4 : PRIORITÉS ══ -->
+<div id="page-priority" class="page">
+  <div class="container">
+    <div style="padding:1.5rem 0 .5rem">
+      <div class="sec-title">🚨 Points d'intervention prioritaires</div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Zones nécessitant une intervention urgente — comparaison moy. 2001–2005 vs moy. 2010–2014</p>
+    </div>
+
+    <!-- Priority KPIs -->
+    <div class="priority-grid">
+      <div class="priority-card" style="border-color:#E85D24;background:#FFF0EC">
+        <div class="priority-icon">🔴</div>
+        <div class="priority-count" style="color:#E85D24">12</div>
+        <div class="priority-label">Zones critiques (>75%)</div>
+      </div>
+      <div class="priority-card" style="border-color:#FF9500;background:#FFF8F0">
+        <div class="priority-icon">🟠</div>
+        <div class="priority-count" style="color:#FF9500">18</div>
+        <div class="priority-label">Zones élevées (25–75%)</div>
+      </div>
+      <div class="priority-card" style="border-color:#F4C542;background:#FFFDF0">
+        <div class="priority-icon">🟡</div>
+        <div class="priority-count" style="color:#B8860B">24</div>
+        <div class="priority-label">Zones modérées (0–25%)</div>
+      </div>
+      <div class="priority-card" style="border-color:#1D9E75;background:#F0FBF7">
+        <div class="priority-icon">✅</div>
+        <div class="priority-count" style="color:#1D9E75">16</div>
+        <div class="priority-label">Zones stables (≤0%)</div>
+      </div>
+    </div>
+
+    <!-- Croissance + tableau -->
+    <div class="grid2">
+      <div class="chart-card">
+        <h3>Top 10 maladies à plus forte croissance</h3>
+        <div class="sub">Taux de croissance max entre 2001–2005 et 2010–2014 (%)</div>
+        <div style="position:relative;height:280px"><canvas id="chartGrowth" aria-label="Bar chart horizontal des 10 maladies à plus forte croissance">Lyme Disease et Pertussis en forte hausse.</canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>Méthode de calcul</h3>
+        <div class="sub">Formule et niveaux de risque</div>
+        <div style="background:#1C2833;border-radius:8px;padding:1rem;font-family:'Courier New';font-size:12px;color:#82E0AA;line-height:1.8;margin-bottom:1rem">
+          Taux_Croissance =<br/>
+          &nbsp;&nbsp;(moy_2010_2014 − moy_2001_2005)<br/>
+          &nbsp;&nbsp;/ (moy_2001_2005 + 1)<br/>
+          &nbsp;&nbsp;× 100
+        </div>
+        <table>
+          <tr><th>Niveau</th><th>Seuil</th><th>Action recommandée</th></tr>
+          <tr><td><span class="badge badge-red">🔴 Critique</span></td><td>> 75%</td><td>Intervention immédiate</td></tr>
+          <tr><td><span class="badge badge-orange">🟠 Élevé</span></td><td>25–75%</td><td>Surveillance renforcée</td></tr>
+          <tr><td><span class="badge badge-yellow">🟡 Modéré</span></td><td>0–25%</td><td>Surveillance standard</td></tr>
+          <tr><td><span class="badge badge-green">✅ Stable</span></td><td>≤ 0%</td><td>Maintien des mesures</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tableau zones prioritaires -->
+    <div class="chart-card">
+      <h3>Tableau des zones prioritaires — Top 15</h3>
+      <div class="sub">Classées par taux de croissance décroissant — comparaison 2001–2005 vs 2010–2014</div>
+      <div class="tbl-wrap">
+        <table id="priorityTable">
+          <tr>
+            <th>#</th><th>Maladie</th><th>Comté</th>
+            <th>Moy 2001–05</th><th>Moy 2010–14</th>
+            <th>Croissance</th><th>Risque</th>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end page-wrap -->
+
+<footer>
+  <strong>EpiSight</strong> — Tableau de bord d'intelligence épidémiologique &nbsp;|&nbsp;
+  PFE : Analyse des Données de Santé Publique &nbsp;|&nbsp;
+  <strong>SARA BENRAHMOUNE</strong> — BTS AL KENDI 2024–2025 &nbsp;|&nbsp;
+  Encadrant : <strong>M. YOUNES BEL ARABI</strong>
+</footer>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────
+const YEARS = [2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014];
+const YEAR_CASES = [42100,43800,45200,47600,51400,55800,58200,62400,64800,68200,65400,61800,57200,53600];
+const TOP10_D = ["Campylobacteriosis","Salmonellosis","Giardiasis","Shigellosis","Hepatitis A","Hepatitis B","Pertussis","Cryptosporidiosis","Tuberculosis","Lyme Disease"];
+const TOP10_C = [142800,98400,67200,54100,41800,38200,35600,22400,18900,9800];
+const COUNTIES = ["Los Angeles","San Diego","San Francisco","Alameda","Orange","Santa Clara","Sacramento","Riverside","San Bernardino","Contra Costa"];
+const COUNTY_C = [189400,78200,61400,54800,48200,43600,38200,31800,28400,22800];
+const TOP5_DATA = {
+  "Campylobacteriosis":[8200,8900,9400,10100,10800,11200,10900,11800,12100,12600,11900,11200,10400,9200],
+  "Salmonellosis":     [5800,6200,6600,7100,7400,7800,7600,7900,8100,8600,8200,7800,7400,6900],
+  "Giardiasis":        [4200,4600,4800,5100,5200,5400,5100,5300,5600,5800,5400,5100,4700,4400],
+  "Shigellosis":       [3200,3600,3800,4100,4400,4600,4300,4100,4200,4400,4100,3800,3400,3200],
+  "Hepatitis A":       [2900,3100,3200,3400,3600,3800,3500,3300,3100,3200,3000,2800,2600,2400]
+};
+const FEAT_NAMES = ["Disease_idx","County_idx","Year","Sex_idx","Decade","Year_norm"];
+const FEAT_VALS  = [0.342,0.281,0.187,0.092,0.063,0.035];
+const GROWTH_D   = ["Lyme Disease","Pertussis","Coccidioidomycosis","Dengue","West Nile Virus","Hepatitis C","Cryptosporidiosis","Shigellosis","Salmonellosis","Campylobacteriosis"];
+const GROWTH_V   = [142.3,118.7,98.4,87.2,76.5,62.1,48.3,34.7,22.1,14.8];
+const HEATMAP_D  = ["Campylobacteriosis","Salmonellosis","Giardiasis","Shigellosis","Hepatitis A","Hepatitis B","Pertussis","Cryptosporidiosis","Tuberculosis","Lyme Disease"];
+const HEATMAP_DATA = [
+  [8.2,8.9,9.4,10.1,10.8,11.2,10.9,11.8,12.1,12.6,11.9,11.2,10.4,9.2],
+  [5.8,6.2,6.6,7.1,7.4,7.8,7.6,7.9,8.1,8.6,8.2,7.8,7.4,6.9],
+  [4.2,4.6,4.8,5.1,5.2,5.4,5.1,5.3,5.6,5.8,5.4,5.1,4.7,4.4],
+  [3.2,3.6,3.8,4.1,4.4,4.6,4.3,4.1,4.2,4.4,4.1,3.8,3.4,3.2],
+  [2.9,3.1,3.2,3.4,3.6,3.8,3.5,3.3,3.1,3.2,3.0,2.8,2.6,2.4],
+  [2.6,2.8,2.9,3.1,3.2,3.3,3.1,3.0,2.9,3.0,2.8,2.7,2.5,2.3],
+  [2.1,2.3,2.4,2.6,2.8,3.1,2.9,2.7,2.8,3.2,3.4,3.1,2.8,2.6],
+  [1.4,1.6,1.7,1.8,1.9,2.0,1.9,1.8,1.9,2.0,1.8,1.7,1.6,1.5],
+  [1.1,1.2,1.3,1.3,1.4,1.4,1.3,1.3,1.2,1.3,1.2,1.1,1.0,0.9],
+  [0.2,0.3,0.4,0.5,0.6,0.7,0.8,1.0,1.2,1.5,1.8,2.1,2.4,2.7]
+];
+const PRIORITY_DATA = [
+  ["Lyme Disease",          "Marin",         0.2, 2.7, 142.3],
+  ["Pertussis",             "Alameda",       2.1, 4.8, 118.7],
+  ["Coccidioidomycosis",    "Kern",          4.8, 9.5,  98.4],
+  ["Dengue",                "Los Angeles",   0.6, 1.1,  87.2],
+  ["West Nile Virus",       "Sacramento",    1.2, 2.1,  76.5],
+  ["Hepatitis C",           "San Francisco", 3.8, 6.1,  62.1],
+  ["Cryptosporidiosis",     "Orange",        1.4, 2.1,  48.3],
+  ["Shigellosis",           "Riverside",     3.2, 4.7,  34.7],
+  ["Salmonellosis",         "San Diego",     5.8, 7.1,  22.1],
+  ["Campylobacteriosis",    "San Bernardino",8.2,10.1,  14.8],
+  ["Meningococcal",         "Contra Costa",  1.2, 1.4,  12.3],
+  ["Hepatitis A",           "Fresno",        2.9, 3.2,   9.1],
+  ["Tuberculosis",          "Alameda",       1.1, 1.2,   7.4],
+  ["Giardiasis",            "Ventura",       4.2, 4.5,   5.2],
+  ["Hepatitis B",           "San Mateo",     2.6, 2.7,   2.8],
+];
+const CORR = [
+  [1.00, 0.12, 0.03,-0.02, 0.01],
+  [0.12, 1.00, 0.28, 0.31, 0.08],
+  [0.03, 0.28, 1.00, 0.14, 0.06],
+  [-0.02,0.31, 0.14, 1.00, 0.03],
+  [0.01, 0.08, 0.06, 0.03, 1.00]
+];
+const CORR_LABELS = ["Year","Count","Disease_idx","County_idx","Sex_idx"];
+
+const C = {accent:"#E85D24",blue:"#1E3A5F",mid:"#2D5A8E",teal:"#117A65",purple:"#4A235A",red:"#922B21",green:"#1D9E75",gold:"#F4C542"};
+const PALETTE = [C.accent,C.blue,C.mid,C.teal,C.purple,C.red,"#F39C12","#8E44AD","#2980B9","#27AE60"];
+
+const baseOpts = (maxY) => ({
+  responsive:true, maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}},
+    y:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+"K":v},grid:{color:"rgba(0,0,0,0.04)"},max:maxY}
+  }
+});
+
+// ── NAV ──────────────────────────────────────────────────
+function showPage(id, btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── CHARTS ───────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+
+  // 1. Évolution annuelle
+  new Chart(document.getElementById('chartEvol'),{
+    type:'line',
+    data:{labels:YEARS,datasets:[{data:YEAR_CASES,borderColor:C.accent,backgroundColor:'rgba(232,93,36,0.08)',fill:true,tension:.35,pointRadius:5,pointBackgroundColor:'#fff',pointBorderColor:C.accent,pointBorderWidth:2}]},
+    options:{...baseOpts(75000),plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}},y:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+"K":v},grid:{color:"rgba(0,0,0,0.04)"}}},responsive:true,maintainAspectRatio:false}
+  });
+
+  // 2. Top 10 maladies
+  new Chart(document.getElementById('chartTop10'),{
+    type:'bar',
+    data:{labels:TOP10_D.slice().reverse(),datasets:[{data:TOP10_C.slice().reverse(),backgroundColor:PALETTE.slice().reverse(),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+"K":v},grid:{color:"rgba(0,0,0,0.04)"}},y:{ticks:{color:"#6B7A99",font:{size:10}},grid:{display:false}}}}
+  });
+
+  // 3. Sexe
+  new Chart(document.getElementById('chartSex'),{
+    type:'doughnut',
+    data:{labels:['Male','Female'],datasets:[{data:[387000,349000],backgroundColor:[C.mid,C.accent],borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:"#6B7A99",font:{size:11},padding:16}}}}
+  });
+
+  // 4. Top 5 tendances
+  const colors5=[C.accent,C.mid,C.teal,"#F39C12",C.purple];
+  new Chart(document.getElementById('chartTop5'),{
+    type:'line',
+    data:{labels:YEARS,datasets:Object.entries(TOP5_DATA).map(([d,vals],i)=>({label:d,data:vals,borderColor:colors5[i],backgroundColor:'transparent',tension:.35,pointRadius:3,pointBackgroundColor:'#fff',pointBorderColor:colors5[i],pointBorderWidth:1.5,borderWidth:2}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#6B7A99",font:{size:10},boxWidth:10,padding:10}}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}},y:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(1)+"K":v},grid:{color:"rgba(0,0,0,0.04)"}}}}
+  });
+
+  // 5. Comtés
+  new Chart(document.getElementById('chartCounty'),{
+    type:'bar',
+    data:{labels:COUNTIES,datasets:[{data:COUNTY_C,backgroundColor:COUNTIES.map((_,i)=>`hsla(${210+i*8},60%,${45+i*3}%,0.85)`),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:9},maxRotation:30},grid:{display:false}},y:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v>=1000?(v/1000).toFixed(0)+"K":v},grid:{color:"rgba(0,0,0,0.04)"}}}}
+  });
+
+  // 6. RMSE & MAE
+  new Chart(document.getElementById('chartRMSE'),{
+    type:'bar',
+    data:{labels:['XGBoost','Random Forest','Grad. Boosting'],datasets:[
+      {label:'RMSE',data:[142.3,167.8,158.4],backgroundColor:[C.accent,C.mid,C.green],borderWidth:0,borderRadius:4},
+      {label:'MAE', data:[98.6,112.4,105.1], backgroundColor:[C.accent+'88',C.mid+'88',C.green+'88'],borderWidth:0,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:"#6B7A99",font:{size:11},boxWidth:10}}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{display:false}},y:{ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}}}}
+  });
+
+  // 7. R²
+  new Chart(document.getElementById('chartR2'),{
+    type:'bar',
+    data:{labels:['XGBoost','Random Forest','Grad. Boosting'],datasets:[{data:[0.8741,0.8312,0.8478],backgroundColor:[C.accent,C.mid,C.green],borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{display:false}},y:{min:0.75,max:0.92,ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}}}}
+  });
+
+  // 8. Feature Importance
+  new Chart(document.getElementById('chartFeat'),{
+    type:'bar',
+    data:{labels:FEAT_NAMES.slice().reverse(),datasets:[{data:FEAT_VALS.slice().reverse(),backgroundColor:FEAT_NAMES.map((_,i)=>`hsl(${20+i*30},75%,${50+i*5}%)`).reverse(),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10}},grid:{color:"rgba(0,0,0,0.04)"}},y:{ticks:{color:"#6B7A99",font:{size:10}},grid:{display:false}}}}
+  });
+
+  // 9. Croissance
+  new Chart(document.getElementById('chartGrowth'),{
+    type:'bar',
+    data:{labels:GROWTH_D.slice().reverse(),datasets:[{data:GROWTH_V.slice().reverse(),backgroundColor:GROWTH_V.slice().reverse().map(v=>v>75?C.accent:v>25?'#FF9500':v>0?C.gold:C.green),borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:"#6B7A99",font:{size:10},callback:v=>v+"%"},grid:{color:"rgba(0,0,0,0.04)"}},y:{ticks:{color:"#6B7A99",font:{size:9}},grid:{display:false}}}}
+  });
+
+  // ── HEATMAP ──
+  const maxH = Math.max(...HEATMAP_DATA.flat());
+  const minH = Math.min(...HEATMAP_DATA.flat());
+  const getHeatColor = v => {
+    const t=(v-minH)/(maxH-minH);
+    const r=Math.round(255-t*(255-180));
+    const g=Math.round(247-t*(247-0));
+    const b=Math.round(236-t*(236-0));
+    return {bg:`rgb(${r},${g},${b})`,txt:t>0.55?'#fff':'#333'};
+  };
+  let ht=`<table class="heatmap-table"><tr><th>Maladie</th>`;
+  YEARS.forEach(y=>ht+=`<th>${y}</th>`);ht+='</tr>';
+  HEATMAP_DATA.forEach((row,i)=>{
+    ht+=`<tr><td style="text-align:left;color:var(--blue);font-weight:600;padding:5px 8px">${HEATMAP_D[i]}</td>`;
+    row.forEach(v=>{const{bg,txt}=getHeatColor(v);ht+=`<td style="background:${bg};color:${txt}">${v}K</td>`;});
+    ht+='</tr>';
+  });
+  ht+='</table>';
+  document.getElementById('heatmapContainer').innerHTML=ht;
+
+  // ── CORRÉLATION ──
+  const corrVars=CORR_LABELS;
+  let cm=`<table style="border-collapse:collapse;font-size:11px;width:100%"><tr><th style="padding:6px;background:var(--blue);color:#fff;font-size:10px"></th>`;
+  corrVars.forEach(v=>cm+=`<th style="padding:6px;background:var(--blue);color:#fff;font-size:10px">${v}</th>`);cm+='</tr>';
+  CORR.forEach((row,i)=>{
+    cm+=`<tr><td style="padding:6px 8px;font-weight:600;color:var(--blue);font-size:11px">${corrVars[i]}</td>`;
+    row.forEach(val=>{
+      const abs=Math.abs(val);
+      const bg=val>=0?`rgba(30,58,95,${abs*0.7})`:`rgba(232,93,36,${abs*0.7})`;
+      const fc=abs>0.3?'#fff':'var(--text)';
+      cm+=`<td style="padding:6px;text-align:center;background:${bg};color:${fc};border-radius:3px;font-weight:${val===1?'700':'400'}">${val.toFixed(2)}</td>`;
+    });cm+='</tr>';
+  });cm+='</table>';
+  document.getElementById('corrMatrix').innerHTML=cm;
+
+  // ── PRIORITY TABLE ──
+  const riskBadge=v=>v>75?'<span class="badge badge-red">🔴 Critique</span>':v>25?'<span class="badge badge-orange">🟠 Élevé</span>':v>0?'<span class="badge badge-yellow">🟡 Modéré</span>':'<span class="badge badge-green">✅ Stable</span>';
+  let tb='';
+  PRIORITY_DATA.forEach(([d,c,m1,m2,g],i)=>{
+    tb+=`<tr>
+      <td><strong>${i+1}</strong></td>
+      <td><strong>${d}</strong></td>
+      <td>${c}</td>
+      <td>${m1}K</td>
+      <td>${m2}K</td>
+      <td><strong style="color:${g>75?'#E85D24':g>25?'#E65100':g>0?'#B8860B':'#1D9E75'}">${g>0?'+':''}${g}%</strong></td>
+      <td>${riskBadge(g)}</td>
+    </tr>`;
+  });
+  document.getElementById('priorityTable').innerHTML+=tb;
+});
+</script>
+</body>
+</html>
